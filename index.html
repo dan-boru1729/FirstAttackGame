@@ -21,10 +21,10 @@
 
 <button onclick = "playerAttack()" title = "3~7ダメージを与える。">通常攻撃</button>
 <button onclick = "playerSpecialAttack()" title = "1~10ダメージを与える。稀に必殺技が発動し、100ダメージを与える。">特殊攻撃</button>
-<button onclick = "playerDefend()" title = "受けるダメージを半減する。">防御</button>
+<button onclick = "playerDefend()" title = "受けるダメージを半減し、次のターンの攻撃力を1.5倍にする。">防御</button>
 <button onclick = "resetGame()" title = "ゲームを最初からにする。">リセット</button>
 
-<h3>ログ</h3>
+<h3>ログ</h3> 
 <div id = "log"></div>
 
 
@@ -33,6 +33,8 @@ let playerDefaultHP = 20;
 let cpuDefaultHP = 20
 let playerHP = playerDefaultHP;
 let cpuHP = cpuDefaultHP;
+let playerPower = 1;
+let cpuPower = 1;
 let isProcessing = false;
 
 function playerAttack() {
@@ -40,11 +42,12 @@ function playerAttack() {
 	isProcessing = true;
 	if (playerHP <= 0 || cpuHP <= 0) {
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
-	let playerDamage = Math.floor(Math.random() * 5) + 3;
-	let cpuAction = Math.floor(Math.random() * 11) + 1;
+	let playerDamage = Math.floor(Math.floor(Math.random() * 5) + 3) * playerPower);
+	let cpuAction = (Math.floor(Math.random() * 11) + 1);
 	
 	if (cpuAction === 11) {
 		addLog("あなたは" + playerDamage + "ダメージを与えようとした");
@@ -54,6 +57,7 @@ function playerAttack() {
 		cpuHP -= playerDamage;
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
@@ -65,10 +69,11 @@ function playerAttack() {
 		addLog("あなたの勝ち！");
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
-	let cpuDamage = cpuAction;
+	let cpuDamage = Math.floor(cpuAction * cpuPower);
 	playerHP -= cpuDamage;
 	addLog("CPUは" + cpuDamage + "ダメージ与えた");
 	
@@ -77,10 +82,27 @@ function playerAttack() {
 		updateDisplay();
 		addLog("あなたの負け...");
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
 	updateDisplay();
+	isProcessing = false;
+	turnEnd();
+}
+
+function turnEnd() {
+	playerBuff -= 1;
+	cpuBuff -= 1;
+	if (playerBuff ==== 0) {
+		playerPower = 1;
+		playerBuff = 1;
+	}
+	
+	if (cpuBuff === 0) {
+		cpuPower = 1;
+		cpuBuff = 1;
+	}
 	isProcessing = false;
 }
 
@@ -105,6 +127,7 @@ function playerSpecialAttack() {
 	isProcessing = true;
 	if (playerHP <= 0 || cpuHP <= 0) {
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
@@ -118,10 +141,11 @@ function playerSpecialAttack() {
 		addLog("あなたの勝利！");
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
-	playerDamage = Math.floor(Math.random() * 10) + 1;
+	playerDamage = Math.floor((Math.floor(Math.random() * 10) + 1) * playerPower);
 	
 	if (cpuAction === 11) {
 		addLog("あなたは" + playerDamage + "ダメージを与えようとした");
@@ -131,6 +155,7 @@ function playerSpecialAttack() {
 		cpuHP -= playerDamage;
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
@@ -142,10 +167,11 @@ function playerSpecialAttack() {
 		addLog("あなたの勝ち！");
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
-	let cpuDamage = cpuAction;
+	let cpuDamage = Math.floor(cpuAction * cpuPower);
 	playerHP -= cpuDamage;
 	addLog("CPUは" + cpuDamage + "ダメージ与えた");
 	
@@ -154,11 +180,13 @@ function playerSpecialAttack() {
 		updateDisplay();
 		addLog("あなたの負け...");
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
 	updateDisplay();
 	isProcessing = false;
+	turnEnd();
 }
 
 function playerDefend() {
@@ -166,6 +194,7 @@ function playerDefend() {
 	isProcessing = true;
 	if (playerHP <= 0 || cpuHP <= 0) {
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
@@ -174,8 +203,13 @@ function playerDefend() {
 	let cpuAction = Math.floor(Math.random() * 11) + 1;
 	if (cpuAction === 11) {
 		addLog("CPUは防御した");
+		playerPower += 1.5;
+		cpuPower *= 1.5;
+		playerBuff = 2;
+		cpuBuff = 2;
 		updateDisplay();
 		isProcessing = false;
+		turnEnd();
 		return;
 	}
 	
@@ -184,8 +218,11 @@ function playerDefend() {
 	cpuDamage = Math.floor(cpuDamage / 2);
 	addLog("CPUは" + cpuDamage + "ダメージを与えた");
 	playerHP -= cpuDamage;
+	playerPower *= 1.5;
+	playerBuff = 2;
 	updateDisplay();
 	isProcessing = false;
+	turnEnd();
 }
 
 function resetGame() {
