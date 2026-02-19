@@ -28,21 +28,21 @@
 <div id="log"></div>
 
 <script>
-let playerMaxHP = 20;
-let cpuMaxHP = 20;
 
-let playerHP = playerMaxHP;
-let cpuHP = cpuMaxHP;
+let maxHP = 20;
+
+let playerHP = maxHP;
+let cpuHP = maxHP;
 
 let playerPower = 1;
 let cpuPower = 1;
 
-let playerBuff = 0;
-let cpuBuff = 0;
+let playerBuff = false;
+let cpuBuff = false;
 
 let isProcessing = false;
 
-// ==================== 共通 ====================
+// ---------- 共通 ----------
 
 function random(min, max){
 	return Math.floor(Math.random()*(max-min+1))+min;
@@ -53,14 +53,11 @@ function addLog(message){
 }
 
 function updateDisplay(){
-	let playerPercent = (playerHP/playerMaxHP)*100;
-	let cpuPercent = (cpuHP/cpuMaxHP)*100;
-
-	document.getElementById("playerBar").style.width = playerPercent+"%";
-	document.getElementById("cpuBar").style.width = cpuPercent+"%";
-
 	document.getElementById("playerHP").textContent = "あなたのHP: " + playerHP;
 	document.getElementById("cpuHP").textContent = "CPUのHP: " + cpuHP;
+
+	document.getElementById("playerBar").style.width = (playerHP/maxHP)*100 + "%";
+	document.getElementById("cpuBar").style.width = (cpuHP/maxHP)*100 + "%";
 }
 
 function checkGameEnd(){
@@ -79,35 +76,24 @@ function checkGameEnd(){
 	return false;
 }
 
-function turnEnd(){
-	if(playerBuff > 0){
-		playerBuff--;
-		if(playerBuff === 0){
-			playerPower = 1;
-		}
-	}
-
-	if(cpuBuff > 0){
-		cpuBuff--;
-		if(cpuBuff === 0){
-			cpuPower = 1;
-		}
-	}
-
-	isProcessing = false;
-}
-
-// ==================== プレイヤー行動 ====================
+// ---------- プレイヤー ----------
 
 function playerAttack(){
 	if(isProcessing || checkGameEnd()) return;
 	isProcessing = true;
 
-	let damage = Math.floor(random(3,7) * playerPower);
+	let damage = random(3,7);
+	if(playerBuff){
+		damage = Math.ceil(damage * 1.5);
+		playerBuff = false;
+		playerPower = 1;
+		addLog("バフ効果で強化攻撃！");
+	}
+
 	addLog("あなたは"+damage+"ダメージ与えた");
 	cpuHP -= damage;
 
-	if(checkGameEnd()){ turnEnd(); return; }
+	if(checkGameEnd()){ isProcessing=false; return; }
 
 	cpuTurn();
 }
@@ -117,20 +103,26 @@ function playerSpecialAttack(){
 	isProcessing = true;
 
 	let lucky = random(1,100);
-
 	if(lucky === 100){
 		addLog("必殺技発動！！");
 		cpuHP = 0;
 		checkGameEnd();
-		turnEnd();
+		isProcessing=false;
 		return;
 	}
 
-	let damage = Math.floor(random(1,10) * playerPower);
+	let damage = random(1,10);
+	if(playerBuff){
+		damage = Math.ceil(damage * 1.5);
+		playerBuff = false;
+		playerPower = 1;
+		addLog("バフ効果で強化攻撃！");
+	}
+
 	addLog("あなたは"+damage+"ダメージ与えた");
 	cpuHP -= damage;
 
-	if(checkGameEnd()){ turnEnd(); return; }
+	if(checkGameEnd()){ isProcessing=false; return; }
 
 	cpuTurn();
 }
@@ -139,29 +131,32 @@ function playerDefend(){
 	if(isProcessing || checkGameEnd()) return;
 	isProcessing = true;
 
-	addLog("あなたは防御した！");
-	playerPower = 1.5;
-	playerBuff = 1;
+	addLog("あなたはチャージした！");
+	playerBuff = true;
 
 	cpuTurn(true);
 }
 
-// ==================== CPUターン ====================
+// ---------- CPU ----------
 
 function cpuTurn(playerDefending=false){
 
 	let action = random(1,11);
 
-	// CPU防御
 	if(action === 11){
-		addLog("CPUは防御した！");
-		cpuPower = 1.5;
-		cpuBuff = 1;
-		turnEnd();
+		addLog("CPUはチャージした！");
+		cpuBuff = true;
+		isProcessing=false;
 		return;
 	}
 
-	let damage = Math.floor(action * cpuPower);
+	let damage = action;
+
+	if(cpuBuff){
+		damage = Math.ceil(damage * 1.5);
+		cpuBuff = false;
+		addLog("CPUの強化攻撃！");
+	}
 
 	if(playerDefending){
 		damage = Math.floor(damage / 2);
@@ -172,20 +167,18 @@ function cpuTurn(playerDefending=false){
 
 	checkGameEnd();
 	updateDisplay();
-	turnEnd();
+
+	isProcessing=false;
 }
 
-// ==================== リセット ====================
+// ---------- リセット ----------
 
 function resetGame(){
-	playerHP = playerMaxHP;
-	cpuHP = cpuMaxHP;
+	playerHP = maxHP;
+	cpuHP = maxHP;
 
-	playerPower = 1;
-	cpuPower = 1;
-
-	playerBuff = 0;
-	cpuBuff = 0;
+	playerBuff = false;
+	cpuBuff = false;
 
 	document.getElementById("log").innerHTML = "";
 	updateDisplay();
